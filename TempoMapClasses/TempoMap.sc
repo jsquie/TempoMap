@@ -4,12 +4,19 @@ TempoMap {
     var meterArr; // dictionary representing the timed subdivisions of a tempo
     var mMatchArr;
     var <bpm; // current beats per minute
-    var <>tolerance = 0.02; // how much leeway are we alloting for inconsitent
+    var <>tolerance = 0.015; // how much leeway are we alloting for inconsitent
                             // timing? could change this to be dynamic later
     var index; // the index of the time we are receiving 
     var total; // running total of deltas received thus far
     var prevMatch;
     var diffTot;
+    var <diffArr;
+    var <endOfMeasureDiffs;
+
+    // current measure informatoin
+    var thisMeasureDiffMean;
+    var thisNumMatches;
+
     const meterResolution = 8;
     // var 
 
@@ -21,6 +28,8 @@ TempoMap {
         timesArr = Array.new(meterResolution);
         meterArr = Array.new(meterResolution);
         mMatchArr = Array.fill(meterResolution, { false });
+        diffArr = Array.new();
+        endOfMeasureDiffs = Array.new();
         numMatches = 0;
         diffTot = 0;
         index = 0;
@@ -28,6 +37,8 @@ TempoMap {
         total = 0;
         bpm = 0;
         tolerance = 0.01;
+        thisMeasureDiffMean = 0;
+        thisNumMatches = 0;
     }
 
     add { arg time;
@@ -65,120 +76,73 @@ TempoMap {
             */
             curr = prevMatch + 1;
 
-            // now we want to compare against prevMatch + 1 
-            // Inv: while curr < meterArr.size - 1
-            // total == meterArr.at(curr) || meterArr.at(curr + 1)
-            // || ... || meterArr.at(prevMatch.at(curr + n))
-           
-            /*
-            block { | break |
 
-                var theseDiffs = [];
-                var minItem = 0;
-
-                while ({ (curr < (meterArr.size)) }, {
-                    var diff;
-                    var range;
-
-                    
-                    diff = total - meterArr.at(curr);
-                    theseDiffs = theseDiffs.add(diff);
-                     
-                    range = meterArr.at(curr) * tolerance;
-
-                    "diff at curr: ".post;
-                    curr.post;
-                    ": ".post;
-                    diff.postln;
-
-                    // if this 
-                    if (diff.abs < range, {
-                        diffTot = diffTot + diff;
-                        prevMatch = curr;
-                        "Found match at curr: ".post;
-                        curr.postln;
-                        mMatchArr = mMatchArr.put(curr, true);
-                        break.value();
-                    });
-                    curr = curr + 1;
-                });
-
-                // no match was found
-                "no match found".postln;
-                minItem = theseDiffs.minItem({ arg item; item.abs });
-                (minItem / bpm).postln;
-                this.prInitmeterArr(bpm + (bpm * (minItem / bpm)));
-
-
-            };
-            */
-
-
-            // running mean ?? keep track of differences as they come in and log
-            // if the average starts leaning a certain way, change the tempo?
-            // This would mean that I would have to track each difference
-            // absolute value?? or no... or yes... we could separately track how
-            // far off things were?? 
             curr = curr + (meterArr[curr..].detectIndex({
                 arg item;
+                var diff;
+                diff = total - item;
+                if((diff.abs < (item * tolerance)), {
+                    "Found match between item: ".post;
+                    item.post;
+                    thisNumMatches = thisNumMatches + 1;
+                    " and total: ".post;
+                    total.postln;
+                    diffArr = diffArr.add(diff);
+                    thisMeasureDiffMean = thisMeasureDiffMean + diff;
 
-                
+                    
 
+                    "diff: ".post;
+                    diff.postln;
+                });
                 (total - item).abs < (item * tolerance);
-            }) ? 0);
+            }) ? -1);
 
             "curr after calculation: ".post;
             curr.postln;
 
-            // do stuff with curr
+            if (thisNumMatches == 0, {
+               "Not enough tempo adjustment"; 
+            });
+            // no match was found, adjust bpm
+            if (curr == 0, {
+                var avgDiff;
 
+                avgDiff = (thisMeasureDiffMean / thisNumMatches);
+                "No matches found.".postln;
+                if (thisNumMatches != 0, {
+                    "We had some matches, so lets adjust based on the average
+                    diff between those matches".postln;
+                    avgDiff.postln;
+                    this.prInitmeterArr(bpm + avgDiff);
 
-            // if curr == meterArr.size then we've matched a new beat 1 of a new
-            // measure 
-
-            // if curr == 0?? 
-
-                       
-            // if total becomes greater than meterArr.at(4) then we need to
-            // reset total because we don't  want to look at times that are
-            // greater than the amount of time in the meter. 
-            // if total is within a 1% range of meterArr.at(3) 
-            if ((total - meterArr.at(meterResolution - 1)).abs <
-            (meterArr.at(meterResolution - 1) * 0.03125), {
-                total = 0;
-                prevMatch = -1; 
-                mMatchArr = [false, false, false, false];                
-                "diffTot: ".post;
-                diffTot.postln;
-
-                if (diffTot.abs > 1, {
-                    var bpmPercentDiff;
-
-                    bpmPercentDiff = diffTot.abs / bpm;
-
-
-                    if (diffTot > 0, {
-                     this.prInitmeterArr(bpm + (bpm * bpmPercentDiff));
-                    }, {
-                     this.prInitmeterArr(bpm - (bpm * bpmPercentDiff));
-
-                    })
-                });
-
-                diffTot = 0;
                 }, {
-                    if(total > meterArr.at(meterResolution - 1), {
-                        total = 0;
-                        prevMatch = -1;
-                    });
-                }
-            );
+                    var thisDiff;
+                    "We have had no matches this measure, lets just adjust".post;
+                    "bpm based off of difference between this hit and last one".post;
+                    "by last diff: ".postln;
 
-            mMatchArr.postln;
+                    thisDiff = 60 / (timesArr.at(index) - timesArr.at(index-1));
+                    "thisDiff: ".post;
+                    thisDiff.postln;
 
-        // times that match meterArr.at(4) result in matches at "beat 1" of
-        // a "new measure"
+                    // this doesnt work if its a synchopation 
+                    // how do we fix this? 
+                    this.prInitmeterArr(thisDiff);
+                });
+                thisNumMatches = 0;
+                thisMeasureDiffMean = 0;
+                    total = 0;
 
+            });
+
+            if (curr == (meterResolution - 1), {
+                "this measure diff mean: ".post;
+                (thisMeasureDiffMean / thisNumMatches).postln;
+                thisNumMatches = 0;
+                thisMeasureDiffMean = 0;
+                total = 0;
+            });
 
     });
 
@@ -200,7 +164,11 @@ prInitmeterArr { arg delta;
 
     "beat 1: 0".postln;
 
-    meterArr = Array.new(4);
+    meterArr = Array.new(meterResolution);
+
+    tolerance = 0.00025 * delta;
+    "new tolerance: ".postln;
+    tolerance.postln;
 
     meterResolution.do({
         arg i;
