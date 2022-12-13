@@ -10,6 +10,7 @@ TempoMap {
     var total; // running total of deltas received thus far
     var prevMatch;
     var diffTot;
+    var makeAdjustmentRange;
     var <diffArr;
     var <endOfMeasureDiffs;
 
@@ -89,7 +90,11 @@ TempoMap {
                     total.postln;
                     diffArr = diffArr.add(diff);
                     thisMeasureDiffMean = thisMeasureDiffMean + diff;
-
+                    if (diff.abs > makeAdjustmentRange, {
+                        // make an adjustment
+                        "outside of adjustmentRange".postln;
+                        this.prInitmeterArr(bpm + diff);
+                    });
                     
 
                     "diff: ".post;
@@ -102,7 +107,7 @@ TempoMap {
             curr.postln;
 
             if (thisNumMatches == 0, {
-               "Not enough tempo adjustment"; 
+               "Not enough tempo adjustment".postln;
             });
             // no match was found, adjust bpm
             if (curr == 0, {
@@ -114,7 +119,7 @@ TempoMap {
                     "We had some matches, so lets adjust based on the average
                     diff between those matches".postln;
                     avgDiff.postln;
-                    this.prInitmeterArr(bpm + avgDiff);
+                    this.prInitmeterArr(bpm + avgDiff, total);
 
                 }, {
                     var thisDiff;
@@ -130,9 +135,10 @@ TempoMap {
                     // how do we fix this? 
                     this.prInitmeterArr(thisDiff);
                 });
+
                 thisNumMatches = 0;
                 thisMeasureDiffMean = 0;
-                    total = 0;
+                total = 0;
 
             });
 
@@ -150,19 +156,17 @@ TempoMap {
 }
 
 
-
-inRange {
-
-    total.postln;
-
-}
-
-prInitmeterArr { arg delta;
+prInitmeterArr { arg delta, currTotal = 0;
     // calculate first delta
     // set initial bpm to that first delta
     bpm = delta;
 
     "beat 1: 0".postln;
+    // set makeAdjustmentRange to be outside of 2 standard devs of bpm
+    makeAdjustmentRange = this.prGetAdjustmentRange();
+    // 0.000135x^{2}+0.0105x-0.61333
+    "adjustmentRange: ".post;
+    makeAdjustmentRange.postln;
 
     meterArr = Array.new(meterResolution);
 
@@ -180,16 +184,24 @@ prInitmeterArr { arg delta;
             i.post;
             " )".postln;
             meterArr = meterArr.add(delta * 0.5 * (i+1));
-        });
+    });
 
-        meterArr.postln;
-        mMatchArr = mMatchArr.put(0, true);
-        
+    meterArr.postln;
+    mMatchArr = mMatchArr.put(0, true);
 
-        //meterArr.postln;
-
+    //meterArr.postln;
+    if (currTotal == 0, {
         total = delta;
 
-    }
+    });
+
+}
+
+prGetAdjustmentRange {
+    var result;
+
+    result = ((0.000135*bpm.squared) + (0.0105*bpm) - 0.61333) * 2;
+    ^result
+}
 
 }
