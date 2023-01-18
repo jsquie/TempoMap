@@ -2,7 +2,6 @@
 s.boot;
 s.quit;
 
-
 (
   ~buffers = [];
   PathName("/Users/jamessquires/Music/SuperCollider/TempoMapProject/Buffers/Real Light/").filesDo{ arg pathname;
@@ -25,6 +24,7 @@ s.waitForBoot({
   ~buffers = [];
   PathName("/Users/jamessquires/Music/SuperCollider/TempoMapProject/Buffers/Real Light/").filesDo{ arg pathname;
 
+  ~tm = TempoMap.new();
     ~buffers = ~buffers.add(CtkBuffer(pathname.fullPath).load);
   };
   
@@ -43,10 +43,8 @@ s.waitForBoot({
       timeScale:1.0, 
       doneAction:2
     );
-    trig = Onsets.kr(FFT(LocalBuf(512), snd), threshold);
-    SendTrig.kr(trig, 0, 0);
+    TempoMap.ar(snd * env, snd * env, 0.9);
     Out.ar(0, Pan2.ar(snd * env, 0))
-
   });
 
   drumBuffer = CtkSynthDef(\plbuf, {
@@ -75,11 +73,10 @@ s.waitForBoot({
   });
   // register to reveive the message
 
-  ~tm = TempoMap.new();
   w = Window.new.front;
   t = StaticText(w, Rect(10, 10, 80, 30)).string_("Not started");
 
-
+/*
   OSCFunc({ arg msg, time;
 
     ~tm.add(time);
@@ -89,8 +86,9 @@ s.waitForBoot({
 
   }, '\tr', s.addr);
 
+  */
   s.sync;
-/*
+
   Pbind(
     'instrument', 'simpleSinPercEnv',
     'out', 0, /// out bus
@@ -99,9 +97,11 @@ s.waitForBoot({
     'duration', 0.15,
     'stretch', Env([1, 1, 0.5], [10, 15], 'lin'),
   ).play(SystemClock);
-*/
 
-   realTimeIn.note.play;
+  ~tm.listen();
+
+
+//   realTimeIn.note.play;
 
 
   4.wait;
@@ -193,3 +193,7 @@ a.postln;
 
 { SoundIn.ar(0)!2}.play
 s.meter
+
+s.boot;
+{ SinOsc.ar(freq:440, phase:0.0, mul:0.2, add:0.0)!2 }.play;
+

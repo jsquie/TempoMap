@@ -27,6 +27,20 @@ TempoMap {
         ^super.new.initTempoMap();
     }
 
+    *ar { arg left, right, threshold;
+       var trig;
+       trig = Onsets.kr(FFT(LocalBuf(512), [left, right]), threshold);
+       SendTrig.kr(trig, 0, 0);
+    }
+    
+    listen {
+        OSCFunc({ arg msg, time;
+
+            time.postln;
+
+        }, \tr, s.addr);
+    }
+    
     initTempoMap {
         timesArr = Array.new(meterResolution);
         meterArr = Array.new(meterResolution);
