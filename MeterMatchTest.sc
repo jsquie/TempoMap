@@ -76,7 +76,7 @@ s.waitForBoot({
   w = Window.new.front;
   t = StaticText(w, Rect(10, 10, 80, 30)).string_("Not started");
 
-/*
+  /*
   OSCFunc({ arg msg, time;
 
     ~tm.add(time);
@@ -98,16 +98,14 @@ s.waitForBoot({
     'stretch', Env([1, 1, 0.5], [10, 15], 'lin'),
   ).play(SystemClock);
 
-  ~tm.listen();
 
-
-//   realTimeIn.note.play;
+   //   realTimeIn.note.play;
 
 
   4.wait;
   //s.sync;
   /*
-  Task({
+  Task(
     var thisWait;
     loop({
       synth.note.play;

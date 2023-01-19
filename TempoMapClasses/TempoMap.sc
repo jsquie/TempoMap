@@ -1,4 +1,5 @@
 TempoMap {
+    var oscFunc;
     var timesArr; // raw time data received from OSCFunc
     var <numMatches;
     var meterArr; // dictionary representing the timed subdivisions of a tempo
@@ -21,25 +22,20 @@ TempoMap {
     var numUnder180;
 
     const meterResolution = 8;
+    const threshold = 0.6;
     // var 
 
     *new {
         ^super.new.initTempoMap();
     }
 
-    *ar { arg left, right, threshold;
+    *ar { arg sig;
        var trig;
-       trig = Onsets.kr(FFT(LocalBuf(512), [left, right]), threshold);
+       trig = Onsets.kr(FFT(LocalBuf(512), sig), threshold);
        SendTrig.kr(trig, 0, 0);
+       ^0.0;
     }
     
-    listen {
-        OSCFunc({ arg msg, time;
-
-            time.postln;
-
-        }, \tr, s.addr);
-    }
     
     initTempoMap {
         timesArr = Array.new(meterResolution);
@@ -58,31 +54,28 @@ TempoMap {
         numUnder180 = 0;
         currDelta = 0.5;
         standardDev = 0.0045310655 * 2;
+        oscFunc = OSCFunc({
+            arg msg, time;
+            
+            'time: '.post;
+            time.postln;
+            this.add(time);
+        }, '/tr');
+        timesQueue.push(0);
     }
 
+    // TODO: fix this so there is no conditional on what index is. 
     add { arg time;
         // first delta added
         timesQueue.push(time);
-
-
-        if (index == 1, {
-            // this could be 'maps' representing different subdivisions of the
-            // estimated meter to compare against  
-            var delta_0;
-            delta_0 = (timesQueue.pop() - timesQueue.peek()).neg;
-            deltasStack.push(delta_0);
-            // add to deltas array
-            //this.prInitmeterArr(delta_0);
-
-        });
+        'index: '.post;
+        index.postln;
 
         if (index > 1, { 
             var delta;
             var sumArr = [];
 
             delta = (timesQueue.pop() - timesQueue.peek()).neg;
-            "DELTA: ".post;
-            (delta).postln;
 
             currDelta = delta;
 
@@ -96,22 +89,13 @@ TempoMap {
                 for (2, diffArr.size - 3, {
                     arg i;
 
-                    (diffArr.at(i) - diffArr.at(i-1)).postln;
 
 
                 });
             });
 
             
-            "----------------------".postln;
-            "index: ".post;
-            index.postln;
-            "----------------------".postln;
-            "deltaStack avg: ".post;
-            deltasStack.runningAvg.postln;
 
-            "curr after calculation: ".post;
-            curr.postln;
 
             curr = curr + 1;
 
@@ -137,13 +121,11 @@ prInitmeterArr { arg delta, currTotal = 0;
     //if (delta < 50, {bpm = delta * 2});
     bpm = 120;
 
-    "beat 1: 0".postln;
     // 0.000135x^{2}+0.0105x-0.61333
 
     meterArr = Array.new(meterResolution);
 
     tolerance = 0.00025 * bpm;
-    "new tolerance: ".postln;
     tolerance.postln;
     // need to rethink this:
     meterResolution.do({
