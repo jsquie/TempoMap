@@ -1,11 +1,16 @@
+// init server 
+(
+o = Server.local.options;
+o.sampleRate = 48000;
+o.blockSize = 512;
+o.inDevice = "Audient ID4";
+o.outDevice = "Audient ID4";
+s.latency = 0.05;
+)
 s.waitForBoot({
     var synth, controlBus;
 
     l = List.new;
-
-    controlBus = Bus.control(s, 1);
-
-    s.sync;
 
     // tm = TempoMap.new;
     TempoMap.new;
@@ -13,7 +18,7 @@ s.waitForBoot({
     synth = CtkSynthDef(\simple, {
         arg freq;
         var snd, env, trig, sig;
-        snd = SinOsc.ar(freq:440, mul: 0.39);
+        snd = SinOsc.ar(freq:440, mul: 1.0);
         env = EnvGen.kr(Env.perc(0.001, 0.5, 0.9, -4.0), doneAction: 2);
         sig = snd * env;
         TempoMap.ar(sig);
@@ -27,10 +32,14 @@ s.waitForBoot({
         'out', 0,
         'freq', 75.midicps,
         'dur', Pseq([1], 10),
+        'stretch', Env([1, 0.5], [10], \sin),
 
     ).play();
 
-    10.wait;
+
+    CmdPeriod.doOnce({
+        "Ended with CMDPERIOD".postln;
+    })
 
 })
 

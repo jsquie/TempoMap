@@ -13,7 +13,7 @@ TempoMap {
     var <diffArr;
     var curr;
     var timesQueue;
-    var <>currDelta;
+    classvar <>currDelta;
     var deltasStack;
 
     // current measure informatoin
@@ -31,18 +31,18 @@ TempoMap {
 
     *ar { arg sig;
        var trig;
-       trig = Onsets.kr(FFT(LocalBuf(512), sig), threshold);
+       trig = Onsets.kr(FFT(LocalBuf(512 * 2), sig), threshold);
+       "HERE AT AR".postln;
        SendTrig.kr(trig, 0, 0);
        ^0.0;
     }
-    
     
     initTempoMap {
         timesArr = Array.new(meterResolution);
         meterArr = Array.new(meterResolution);
         diffArr = Array.new();
         timesQueue = Queue.new(meterResolution);
-        deltasStack = Stack.new(meterResolution);
+        deltasStack = Queue.new(meterResolution);
         numMatches = 0;
         index = 0;
         total = 0;
@@ -56,60 +56,60 @@ TempoMap {
         standardDev = 0.0045310655 * 2;
         oscFunc = OSCFunc({
             arg msg, time;
-            
-            'time: '.post;
+
+
+            "---------------".postln;
+            "time: ".post;
             time.postln;
             this.add(time);
+           
         }, '/tr');
-        timesQueue.push(0);
     }
 
     // TODO: fix this so there is no conditional on what index is. 
     add { arg time;
         // first delta added
-        timesQueue.push(time);
         'index: '.post;
         index.postln;
 
-        if (index > 1, { 
-            var delta;
-            var sumArr = [];
+        if (index > 0, {
+            var last, thisDiff;
 
-            delta = (timesQueue.pop() - timesQueue.peek()).neg;
+            last = timesQueue.pop();
+            thisDiff = time - last;
 
-            currDelta = delta;
+            "diff: ".post;
+            (thisDiff).postln;
+            "bpm derived from thisDiff: ".post;
+            (60 / thisDiff).postln;
+            if (index == 1, {
+                bpm = 60 / thisDiff;
 
-            diffArr = diffArr.add(delta);
-            deltasStack.push(delta);
-            total = total + delta;
-            bpm = (60 / deltasStack.runningAvg);
-
-            
-            if (diffArr.size > 3, {
-                for (2, diffArr.size - 3, {
-                    arg i;
-
-
-
-                });
             });
+            if (index > 1, {
+                var lastDiff;
 
-            
+                lastDiff = deltasStack.pop();
 
+                "diffDiff: ".postln;
+                (thisDiff - lastDiff).postln;
 
-            curr = curr + 1;
+                "diffDiff as a percentage of time: ".post;
+                ((thisDiff - lastDiff) / thisDiff).postln;
+                bpm = bpm - (bpm * ((thisDiff - lastDiff) / thisDiff));
+                "bpm calulated from diff percent change: ".post;
+                bpm.postln;
 
-            if (curr == (meterResolution - 1), {
-                total = 0;
-                curr = 0;
             });
+            deltasStack.push(thisDiff);
+            currDelta = thisDiff;
+            "-------------".postln;
 
+        });
 
-            
-    });
-
-    index = index + 1;
-}
+        timesQueue.push(time);
+        index = index + 1;
+    }
 
 prInitmeterArr { arg delta, currTotal = 0;
     // calculate first delta
