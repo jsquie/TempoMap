@@ -3,8 +3,8 @@
 o = Server.local.options;
 o.sampleRate = 48000;
 o.blockSize = 512;
-o.inDevice = "Audient ID4";
-o.outDevice = "Audient ID4";
+o.inDevice = "Macbook Pro Internal Microphone";
+o.outDevice = "Macbook Pro Speakersk";
 s.latency = 0.05;
 )
 s.waitForBoot({

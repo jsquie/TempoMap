@@ -13,7 +13,6 @@ TempoMap {
     var <diffArr;
     var curr;
     var timesQueue;
-    classvar <>currDelta;
     var deltasStack;
 
     // current measure informatoin
@@ -52,7 +51,6 @@ TempoMap {
         thisMeasureDiffMean = 0;
         curr = 0;
         numUnder180 = 0;
-        currDelta = 0.5;
         standardDev = 0.0045310655 * 2;
         oscFunc = OSCFunc({
             arg msg, time;
@@ -66,7 +64,6 @@ TempoMap {
         }, '/tr');
     }
 
-    // TODO: fix this so there is no conditional on what index is. 
     add { arg time;
         // first delta added
         'index: '.post;
@@ -96,13 +93,12 @@ TempoMap {
 
                 "diffDiff as a percentage of time: ".post;
                 ((thisDiff - lastDiff) / thisDiff).postln;
-                bpm = bpm - (bpm * ((thisDiff - lastDiff) / thisDiff));
+                // bpm = bpm - (bpm * ((thisDiff - lastDiff) / thisDiff));
                 "bpm calulated from diff percent change: ".post;
                 bpm.postln;
 
             });
             deltasStack.push(thisDiff);
-            currDelta = thisDiff;
             "-------------".postln;
 
         });
