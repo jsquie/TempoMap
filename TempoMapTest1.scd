@@ -9,7 +9,7 @@ o.inDevice = "Macbook Pro Internal Microphone";
 o.outDevice = "Audient iD4";
 s.latency = 0.5;
 ~speed = 0.25;
-~hits = 16;
+~hits = 500;
 )
 s.waitForBoot({
     
@@ -76,8 +76,9 @@ s.waitForBoot({
         "Percentage of mean that is 3 standard devs: ".postln;
         ((standardDev * 3) / mean).postln;
 
-        "number of hits within 3 standard devs: ".post;
-        TempoMap.numStandardMatches.postln;
+        "beat 16 (beat 0): ".post;
+        (TempoMap.metArr.orgTime +
+        TempoMap.metArr.totalDiff).postln;
 
     })
 
@@ -93,7 +94,17 @@ File.use("~/Music/SuperCollider/testFile.txt".standardizePath, "w", { |f|
 )
 
 (
-(60 / ~speed).postln;
+20.do {|i| (i % 4).postln;}
+)
+(
+{
+    SendPeakRMS.kr(Dust.ar(20), 20, 3, "/replyAddress")
+}.play;
 )
 
-0.005155 * 3
+(
+o = OSCFunc({ |msg|
+    "peak: %, rms: %".format(msg[3], msg[4]).postln
+}, '/replyAddress');
+)
+o.free;

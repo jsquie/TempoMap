@@ -22,11 +22,13 @@ TempoMap {
     var numUnder180;
     var runningDiffTot;
     classvar <numStandardMatches;
-    classvar metArr;
+    // TODO do not make this accessible THIS IS FOR DEBUG PURPOSES
+    classvar <metArr;
+    classvar timeAdjustment;
 
-    const meterResolution = 64;
+    const meterResolution = 16;
     const threshold = 0.2;
-    const threeStandardDevs = 0.015465;
+    const threeStandardDevs = 0.015867855243157;
     // var 
 
     *new {
@@ -61,6 +63,7 @@ TempoMap {
         numStandardMatches = 0;
         numUnder180 = 0;
         runningDiffTot = 0;
+        timeAdjustment = 0;
         oscFunc = OSCFunc({
             arg msg, time;
             "---------------".postln;
@@ -86,12 +89,12 @@ TempoMap {
 
             "diff: ".post;
             (thisDiff).postln;
-            "bpm derived from thisDiff: ".post;
-            ((60 / thisDiff).round).postln;
+            // "bpm derived from thisDiff: ".post;
+            // ((60 / thisDiff).round).postln;
             bpmQueue.push(60 / thisDiff);
-            bpm = bpmQueue.runningAvg.round;
-            "bpm is: ".post;
-            bpm.postln;
+            bpm = ((bpmQueue.runningAvg * 10).round / 10);
+             "bpm is: ".post;
+             bpm.postln;
             if (index == 1, {
                 bpm = 60 / thisDiff;
                 // init metArr
@@ -108,8 +111,8 @@ TempoMap {
               
 
                 diffDiff = thisDiff - lastDiff;
-                // "diffDiff: ".postln;
-                // diffDiff.postln;
+                 "diffDiff: ".postln;
+                 diffDiff.postln;
 /*                 if (diffDiff.abs <= threeStandardDevs, { */
                 /*     "SUCCESS: this diff is within 2 standard devs of last */
                 /*     diff!".postln; */
@@ -126,16 +129,25 @@ TempoMap {
                 /*      */
                 /* }); */
 
-                if (index == 4, {
-                    this.prInitMetArr(time, thisDiff);
-
+                // this is not starting the measurement on the 1, but is off by
+                // 1
+                if (index == 8, {
+                    this.prInitMetArr(time, deltasTotAvg.runningAvg);
                 });
-                if (index > 4, {
+                if (index > 8, {
                     var cmpTime;
 
-                    cmpTime = time;
-
                     runningDiffTot = runningDiffTot + thisDiff;
+                    if (runningDiffTot > metArr.totalDiff, {
+                        timeAdjustment = timeAdjustment - runningDiffTot;
+                        runningDiffTot = 0;
+                    });
+                    cmpTime = time + timeAdjustment;                     
+
+                    "cmpTime: ".post;
+                    
+                    cmpTime.postln;
+
 
                     "metArr max diff: ".postln;
                     metArr.totalDiff.postln;
@@ -143,11 +155,6 @@ TempoMap {
                     "runningDiffTot: ".post;
                     runningDiffTot.postln;
 
-                    if (runningDiffTot > metArr.totalDiff, {
-                        cmpTime = cmpTime - runningDiffTot;
-                        runningDiffTot = 0;
-
-                    });
 
 
                     "DID WE FIND A MATCH? ".post;
@@ -159,8 +166,8 @@ TempoMap {
             });
             deltasQueue.push(thisDiff);
             deltasTotAvg.push(thisDiff);
-            // "Average delta: ".post;
-            // deltasTotAvg.runningAvg.postln;
+             "Average delta: ".post;
+             deltasTotAvg.runningAvg.postln;
             // "Range: ".post;
             // deltasTotAvg.range.postln;
             // "Bpm running Avg: ".post;
@@ -187,13 +194,13 @@ TempoMap {
 
         (meterResolution / 4).do({|i|
             4.do({|x|
-                meterValues.add(i + (0.1 * (x % 4)))
+                meterValues.add((i+1) + (0.1 * ((x % 4) + 1)))
             });
         });
 
         futureTimes = Array.fill(meterResolution, { |i| initTime + (i * (0.25 * diff))});
 
-        futureTimes.postln;
+        futureTimes.do({ |x, y| x.post; ", ".post;  meterValues.at(y).postln; });
 
         meterResolution.do({ |i| metArr.add(futureTimes.at(i), meterValues.at(i))});
         
@@ -223,11 +230,11 @@ prFindMatch { arg curr;
             total.postln;
             diffArr = diffArr.add(diff);
             thisMeasureDiffMean = thisMeasureDiffMean + diff;
-            if (diff.abs > makeAdjustmentRange, {
+            // if (diff.abs > makeAdjustmentRange, {
                 // make an adjustment
-                "outside of adjustmentRange".postln;
-                this.prInitmeterArr(bpm + diff);
-            });
+                // "outside of adjustmentRange".postln;
+                // this.prInitmeterArr(bpm + diff);
+            // });
             "diff: ".post;
             diff.postln;
         });

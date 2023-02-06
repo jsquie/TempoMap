@@ -2,8 +2,8 @@ MeterArr {
   var internalArr;
   var size;
   
-  const threeStandardDevs = 0.015465;
-  const meterResolution = 64;
+  const threeStandardDevs = 0.015867855243157;
+  const meterResolution = 16;
 
   *new {
     ^super.new.initMeterArr();
@@ -17,6 +17,17 @@ MeterArr {
   add { arg key, value;
     internalArr = internalArr.add([key, value]);
     size = size + 1;
+  }
+
+  maxTime {
+    var diff;
+
+    diff = internalArr.at(1)[0] - internalArr.at(0)[0];
+    ^(internalArr.at(meterResolution - 1)[0] + threeStandardDevs + diff)
+  }
+
+  orgTime {
+    ^internalArr.at(0)[0]
   }
 
   find { arg key;
