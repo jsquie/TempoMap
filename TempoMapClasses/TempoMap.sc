@@ -20,10 +20,11 @@ TempoMap {
     var thisMeasureDiffMean;
     var thisNumMatches;
     var numUnder180;
+    var runningDiffTot;
     classvar <numStandardMatches;
     classvar metArr;
 
-    const meterResolution = 8;
+    const meterResolution = 64;
     const threshold = 0.2;
     const threeStandardDevs = 0.015465;
     // var 
@@ -59,9 +60,12 @@ TempoMap {
         curr = 0;
         numStandardMatches = 0;
         numUnder180 = 0;
+        runningDiffTot = 0;
         oscFunc = OSCFunc({
             arg msg, time;
             "---------------".postln;
+            "time: ".post;
+            time.postln;
             this.add(time);
            
         }, '/tr');
@@ -78,6 +82,8 @@ TempoMap {
             last = timesQueue.pop();
             thisDiff = time - last;
 
+            
+
             "diff: ".post;
             (thisDiff).postln;
             "bpm derived from thisDiff: ".post;
@@ -88,45 +94,77 @@ TempoMap {
             bpm.postln;
             if (index == 1, {
                 bpm = 60 / thisDiff;
+                // init metArr
 
             });
             if (index > 1, {
                 var lastDiff;
                 var diffDiff;
 
+                // check meter arr with current "time" to see if we have a match
+
                 lastDiff = deltasQueue.pop();
 
               
 
                 diffDiff = thisDiff - lastDiff;
-                "diffDiff: ".postln;
-                diffDiff.postln;
-                if (diffDiff.abs <= threeStandardDevs, {
-                    "SUCCESS: this diff is within 2 standard devs of last
-                    diff!".postln;
-                    numStandardMatches = numStandardMatches + 1;
-                }, { 
-                    "difference: ".post;
-                    (threeStandardDevs - diffDiff).postln;
-                });
+                // "diffDiff: ".postln;
+                // diffDiff.postln;
+/*                 if (diffDiff.abs <= threeStandardDevs, { */
+                /*     "SUCCESS: this diff is within 2 standard devs of last */
+                /*     diff!".postln; */
+                /*     numStandardMatches = numStandardMatches + 1; */
+                /* }, {  */
+                /*     "difference: ".post; */
+                /*     (threeStandardDevs - diffDiff).postln; */
+/*                 } */
                 diffQueue.push(diffDiff);
 
 
-                if (diffDiff.abs > deltasQueue.range, {
-                    "diffDiff is greater than range!".postln;
-                    
+                /* if (diffDiff.abs > deltasQueue.range, { */
+                /*     "diffDiff is greater than range!".postln; */
+                /*      */
+                /* }); */
+
+                if (index == 4, {
+                    this.prInitMetArr(time, thisDiff);
+
+                });
+                if (index > 4, {
+                    var cmpTime;
+
+                    cmpTime = time;
+
+                    runningDiffTot = runningDiffTot + thisDiff;
+
+                    "metArr max diff: ".postln;
+                    metArr.totalDiff.postln;
+
+                    "runningDiffTot: ".post;
+                    runningDiffTot.postln;
+
+                    if (runningDiffTot > metArr.totalDiff, {
+                        cmpTime = cmpTime - runningDiffTot;
+                        runningDiffTot = 0;
+
+                    });
+
+
+                    "DID WE FIND A MATCH? ".post;
+                    metArr.find(cmpTime).postln;
+
                 })
 
 
             });
             deltasQueue.push(thisDiff);
             deltasTotAvg.push(thisDiff);
-            "Average delta: ".post;
-            deltasTotAvg.runningAvg.postln;
-            "Range: ".post;
-            deltasTotAvg.range.postln;
-            "Bpm running Avg: ".post;
-            bpmQueue.runningAvg.postln;
+            // "Average delta: ".post;
+            // deltasTotAvg.runningAvg.postln;
+            // "Range: ".post;
+            // deltasTotAvg.range.postln;
+            // "Bpm running Avg: ".post;
+            // bpmQueue.runningAvg.postln;
             if (bpmQueue.size > (bpm / 10), {
                 bpmQueue.pop();
             });
@@ -138,6 +176,28 @@ TempoMap {
         index = index + 1;
     }
 
+    prInitMetArr { arg initTime, diff;
+
+        var meterValues, keyValuePairs, futureTimes;
+
+        "Initializing from time: ".post;
+        initTime.postln;
+
+        meterValues = Array.new(meterResolution);
+
+        (meterResolution / 4).do({|i|
+            4.do({|x|
+                meterValues.add(i + (0.1 * (x % 4)))
+            });
+        });
+
+        futureTimes = Array.fill(meterResolution, { |i| initTime + (i * (0.25 * diff))});
+
+        futureTimes.postln;
+
+        meterResolution.do({ |i| metArr.add(futureTimes.at(i), meterValues.at(i))});
+        
+    }
 prInitmeterArr { arg delta, currTotal = 0;
     
 

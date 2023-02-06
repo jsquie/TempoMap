@@ -8,8 +8,8 @@ o.blockSize = ~blockSize;
 o.inDevice = "Macbook Pro Internal Microphone";
 o.outDevice = "Audient iD4";
 s.latency = 0.5;
-~speed =1/4 ;
-~hits = 101;
+~speed = 0.25;
+~hits = 16;
 )
 s.waitForBoot({
     

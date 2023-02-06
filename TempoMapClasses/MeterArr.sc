@@ -3,7 +3,7 @@ MeterArr {
   var size;
   
   const threeStandardDevs = 0.015465;
-  const meterResolution = 16;
+  const meterResolution = 64;
 
   *new {
     ^super.new.initMeterArr();
@@ -52,9 +52,15 @@ MeterArr {
 
   }
 
+  totalDiff {
+    ^((internalArr.at(meterResolution - 1)[0] + threeStandardDevs) - internalArr.at(0)[0]);
+  }
+
   prEqual { arg key, other;
     ^((key - other).abs <= threeStandardDevs)
   }
+
+
 
   print {
     internalArr.postln;
