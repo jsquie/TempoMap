@@ -15,6 +15,7 @@ TempoMap {
     classvar <diffQueue;
     classvar <bpmQueue;
     classvar <deltasTotAvg;
+    classvar <deltasMeterArr;
 
     // current measure informatoin
     var thisMeasureDiffMean;
@@ -52,6 +53,7 @@ TempoMap {
         diffQueue = Queue.new(meterResolution);
         bpmQueue = Queue.new();
         metArr = MeterArr.new();
+        deltasMeterArr = MeterArr();
         numMatches = 0;
         index = 0;
         total = 0;
@@ -64,6 +66,7 @@ TempoMap {
         numUnder180 = 0;
         runningDiffTot = 0;
         timeAdjustment = 0;
+
         oscFunc = OSCFunc({
             arg msg, time;
             "---------------".postln;
@@ -80,10 +83,24 @@ TempoMap {
         index.postln;
 
         if (index > 0, {
-            var last, thisDiff;
+            var last, thisDiff, deltasCount;
 
             last = timesQueue.pop();
             thisDiff = time - last;
+
+            deltasCount = deltasMeterArr.find(thisDiff);
+
+            if (deltasCount != nil, {
+                var newCount;
+                newCount = deltasCount + 1;
+                deltasMeterArr.add(thisDiff, newCount);
+
+            }, {
+                deltasMeterArr.add(thisDiff, 1);
+            });
+
+            "deltasCount: ".post;
+            deltasMeterArr.print;
 
             
 

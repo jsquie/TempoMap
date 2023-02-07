@@ -1,5 +1,4 @@
-// init server 
-s.quit;
+// init server s.quit;
 (
 ~blockSize = 256;
 o = Server.local.options;
@@ -108,3 +107,5 @@ o = OSCFunc({ |msg|
 }, '/replyAddress');
 )
 o.free;
+
+

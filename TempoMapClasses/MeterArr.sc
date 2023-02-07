@@ -15,8 +15,18 @@ MeterArr {
   }
 
   add { arg key, value;
-    internalArr = internalArr.add([key, value]);
-    size = size + 1;
+    var wasFound;
+
+    wasFound = this.prFindIndex(key);
+
+    if (wasFound != nil, {
+      internalArr = internalArr.put(wasFound, [key, value]);
+      
+    }, {
+      internalArr = internalArr.add([key, value]);
+      size = size + 1;
+    });
+
   }
 
   maxTime {
@@ -63,6 +73,38 @@ MeterArr {
 
   }
 
+  prFindIndex { arg key;
+    var start, end;
+
+    start = 0;
+    end = size - 1;
+
+    while({ start <= end }, {
+      // body func
+      var mid;
+      var thisKv;
+
+      mid = ((start + end) / 2).floor;
+
+      thisKv = internalArr.at(mid);
+
+      if (this.prEqual(thisKv[0], key), {
+        ^mid
+      });
+
+      if (thisKv[0] < key, {
+        start = mid + 1;
+      });
+
+      if (thisKv[0] > key, {
+        end = mid - 1;
+      });
+
+    });
+    ^nil
+
+  }
+
   totalDiff {
     ^((internalArr.at(meterResolution - 1)[0] + threeStandardDevs) - internalArr.at(0)[0]);
   }
@@ -76,6 +118,8 @@ MeterArr {
   print {
     internalArr.postln;
   }
+
+
 
 
   
