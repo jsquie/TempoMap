@@ -2,7 +2,7 @@
 /* Heap with Array Representation  */
 /* From node i, left child: (2 * i) + 1, right child: (2 * i) + 2, parent: (i-1) / 2 */
 
-MaxHeap {
+MaxIntHeap {
   var root, internalArr;
   var size, maxSize;
 
@@ -22,21 +22,23 @@ MaxHeap {
 
   // percolate down
   deleteMax {
-    var result;
+    var result, current;
 
     result = internalArr.at(0);
 
+    if (size > 0, {
 
+      // replace max item with last index
+      internalArr = internalArr.put(0, internalArr.at(size - 1));
+      internalArr = internalArr.put(size - 1, nil);
+      size = size - 1;
+      this.prMaxHeapify(0)
 
+    });
 
-
-
-
-
-    // answer = root.data
-    // move right-most node in last row to root to restore structure property
-    // "Percolate down" to restore heap order property
-
+    "Afterwards: ".postln;
+    internalArr.postln;
+    ^result;
   }
 
   // percolate up
@@ -107,7 +109,7 @@ MaxHeap {
   prIsLeaf { arg pos;
     if ((pos > (size.div(2))) && (pos <= size), {
       ^true;
-    })
+    });
     ^false
   }
 
@@ -125,22 +127,38 @@ MaxHeap {
 
   prMaxHeapify { arg pos;
 
+    var leftChild, rightChild, curr;
+
     if (this.prIsLeaf(pos), {
       ^nil
     });
 
-    if ((internalArr.at(pos) < internalArr.at(this.prLeftChild(pos))) ||
-        (internalArr.at(pos) < internalArr.at(this.prRightChild(pos))), {
+    curr = internalArr.at(pos);
+    leftChild = internalArr.at(this.prLeftChild(pos));
+    rightChild = internalArr.at(this.prRightChild(pos));
 
-          if (internalArr.at(this.prLeftChild(pos)) > internalArr.at(this.prRightChild(pos)), {
-            this.prSwap(pos, prLeftChild(pos));
-            this.prMaxHeapify(this.prLeftChild(pos));
-          }, {
-            this.prSwap(pos, prRightChild(pos));
-            this.prMaxHeapify(this.prRightChild(pos));
-          });
+/*     "Curr: ".post; */
+    /* curr.post; */
+    /* " left: ".post; */
+    /* leftChild.post; */
+    /* " right: ".post; */
+    /* rightChild.postln; */
+    /* internalArr.postln; */
+    
 
-        }); 
+    if (leftChild != nil, {
+      if (curr < leftChild, {
+        this.prSwap(pos, this.prLeftChild(pos));
+        this.prMaxHeapify(this.prLeftChild(pos));
+      });
+    });
+
+    if (rightChild != nil, {
+      if (curr < rightChild, {
+        this.prSwap(pos, this.prRightChild(pos));
+        this.prMaxHeapify(this.prRightChild(pos));
+      });
+    });
 
 
   }
