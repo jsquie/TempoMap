@@ -5,7 +5,7 @@ TempoMap {
     var <>bpm; // current beats per minute
     var <>tolerance = 0.015; // how much leeway are we alloting for inconsitent
                             // timing? could change this to be dynamic later
-    var index; // the index of the time we are receiving 
+    classvar <index; // the index of the time we are receiving 
     var total; // running total of deltas received thus far
     var makeAdjustmentRange;
     var <diffArr;
@@ -16,6 +16,8 @@ TempoMap {
     classvar <bpmQueue;
     classvar <deltasTotAvg;
     classvar <deltasMeterArr;
+    classvar <notFound;
+    classvar <currDelta;
 
     // current measure informatoin
     var thisMeasureDiffMean;
@@ -26,6 +28,7 @@ TempoMap {
     // TODO do not make this accessible THIS IS FOR DEBUG PURPOSES
     classvar <metArr;
     classvar timeAdjustment;
+    classvar deltasHeap;
 
     const meterResolution = 16;
     const threshold = 0.2;
@@ -66,6 +69,8 @@ TempoMap {
         numUnder180 = 0;
         runningDiffTot = 0;
         timeAdjustment = 0;
+        deltasHeap = MaxMeterHeap.new();
+        notFound = 0;
 
         oscFunc = OSCFunc({
             arg msg, time;
@@ -102,57 +107,65 @@ TempoMap {
             "deltasCount: ".post;
             deltasMeterArr.print;
 
-            
-
             "diff: ".post;
             (thisDiff).postln;
-            // "bpm derived from thisDiff: ".post;
-            // ((60 / thisDiff).round).postln;
-            bpmQueue.push(60 / thisDiff);
-            bpm = ((bpmQueue.runningAvg * 10).round / 10);
-             "bpm is: ".post;
-             bpm.postln;
+
             if (index == 1, {
                 bpm = 60 / thisDiff;
                 // init metArr
 
             });
+
             if (index > 1, {
                 var lastDiff;
                 var diffDiff;
-
                 // check meter arr with current "time" to see if we have a match
-
                 lastDiff = deltasQueue.pop();
-
-              
-
+                // difference between current diff and last diff
                 diffDiff = thisDiff - lastDiff;
-                 "diffDiff: ".postln;
-                 diffDiff.postln;
-/*                 if (diffDiff.abs <= threeStandardDevs, { */
-                /*     "SUCCESS: this diff is within 2 standard devs of last */
-                /*     diff!".postln; */
-                /*     numStandardMatches = numStandardMatches + 1; */
-                /* }, {  */
-                /*     "difference: ".post; */
-                /*     (threeStandardDevs - diffDiff).postln; */
-/*                 } */
+                // add to the queue of difference differences
                 diffQueue.push(diffDiff);
 
+                // after aquiring enough differences to make a decision on what
+                // the tempo might be
+                if (index == 16, {
+                    var deltaCountContents, deltasAvg, maxDeltaCount;
 
-                /* if (diffDiff.abs > deltasQueue.range, { */
-                /*     "diffDiff is greater than range!".postln; */
-                /*      */
-                /* }); */
+                    deltaCountContents = deltasMeterArr.getArr();
+                    /// add everything from deltasCount into the heap 
+                    // identify what the max value is.
+                    // add them all with the backwards version 
+                    "*****deltasCount.size: ".post;
+                    deltaCountContents.size.postln;
 
-                // this is not starting the measurement on the 1, but is off by
-                // 1
-                if (index == 8, {
-                    this.prInitMetArr(time, deltasTotAvg.runningAvg);
+                    deltaCountContents.size.do({|i|
+                        "INDEX: ".post;
+                        i.postln;
+                        deltasHeap.insert(
+                            deltaCountContents.at(i)[1], 
+                            deltaCountContents.at(i)[0],
+                            i
+                        );
+                    });
+
+                    // determine the most commonly occuring delta 
+                    maxDeltaCount = deltasHeap.findMax();
+
+
+                    deltasAvg = deltaCountContents.at(maxDeltaCount[2])[3];
+
+                    "deltas average: ".post;
+                    deltasAvg.postln;
+
+                    this.prInitMetArr(time, deltasAvg);
+
+                    currDelta = deltasAvg;
+
+
                 });
-                if (index > 8, {
-                    var cmpTime;
+
+                if (index > 16, {
+                    var cmpTime, found;
 
                     runningDiffTot = runningDiffTot + thisDiff;
                     if (runningDiffTot > metArr.totalDiff, {
@@ -162,9 +175,7 @@ TempoMap {
                     cmpTime = time + timeAdjustment;                     
 
                     "cmpTime: ".post;
-                    
                     cmpTime.postln;
-
 
                     "metArr max diff: ".postln;
                     metArr.totalDiff.postln;
@@ -172,15 +183,23 @@ TempoMap {
                     "runningDiffTot: ".post;
                     runningDiffTot.postln;
 
-
-
                     "DID WE FIND A MATCH? ".post;
-                    metArr.find(cmpTime).postln;
+                    found = metArr.find(cmpTime);
+                    found.postln;
 
-                })
+                    if (found.isNil, {
+
+                        notFound = notFound + 1;
+
+                    });
+                    
+
+                });
+
 
 
             });
+
             deltasQueue.push(thisDiff);
             deltasTotAvg.push(thisDiff);
              "Average delta: ".post;

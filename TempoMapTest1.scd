@@ -1,13 +1,15 @@
 // init server s.quit;
+ServerOptions.devices
+
 (
 ~blockSize = 256;
 o = Server.local.options;
 o.sampleRate = 48000;
 o.blockSize = ~blockSize;
 o.inDevice = "Macbook Pro Internal Microphone";
-o.outDevice = "Audient iD4";
+o.outDevice = "External Headphones";
 s.latency = 0.5;
-~speed = 0.25;
+~speed = 0.5;
 ~hits = 500;
 )
 s.waitForBoot({
@@ -35,7 +37,8 @@ s.waitForBoot({
         'instrument', 'simple',
         'out', 0,
         'freq', 75.midicps,
-        'dur', Pseq([~speed], ~hits),
+        'dur', Pseq([~speed / 2, ~speed / 2, ~speed], ~hits),
+        // 'dur', Pseq([~speed / 2], ~hits),
         // 'stretch', Env([1, 0.5], [10], \sin),
 
     ).play();
@@ -79,6 +82,9 @@ s.waitForBoot({
         (TempoMap.metArr.orgTime +
         TempoMap.metArr.totalDiff).postln;
 
+        "*********** Number of not founds: ***********".postln;
+        TempoMap.notFound.postln;
+
     })
 
 })
@@ -108,4 +114,12 @@ o = OSCFunc({ |msg|
 )
 o.free;
 
+(
+var arr;
 
+arr = [5, 6, 5, 5, 6, 5];
+
+arr.do({|x,y| x.postln; y.postln; });
+
+
+)

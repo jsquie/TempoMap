@@ -1,6 +1,6 @@
 MeterArr {
-  var internalArr;
-  var size;
+  var <internalArr;
+  var <size;
   
   const threeStandardDevs = 0.015867855243157;
   const meterResolution = 16;
@@ -20,10 +20,15 @@ MeterArr {
     wasFound = this.prFindIndex(key);
 
     if (wasFound != nil, {
-      internalArr = internalArr.put(wasFound, [key, value]);
+      var sum, avg;
+
+      sum = internalArr.at(wasFound)[2] + key;
+      avg = sum / value;
+
+      internalArr = internalArr.put(wasFound, [key, value, sum, avg]);
       
     }, {
-      internalArr = internalArr.add([key, value]);
+      internalArr = internalArr.add([key, value, key, key]);
       size = size + 1;
     });
 
@@ -113,15 +118,13 @@ MeterArr {
     ^((key - other).abs <= threeStandardDevs)
   }
 
-
-
   print {
     internalArr.postln;
+  
   }
 
-
-
-
-  
+  getArr {
+    ^internalArr;
+  }
 
 }

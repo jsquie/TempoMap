@@ -3,7 +3,7 @@
 /* From node i, left child: (2 * i) + 1, right child: (2 * i) + 2, parent: (i-1) / 2 */
 
 MaxMeterHeap {
-  var root, internalArr;
+  var root, <internalArr;
   var size, maxSize;
 
   *new {
@@ -42,7 +42,7 @@ MaxMeterHeap {
   }
 
   // percolate up
-  insert { arg key, value;
+  insert { arg key, value, metArrIndex;
     var current;
     // put new node in next position on bottom row to restore structure property
     // "Percolate up" to restore heap order property
@@ -51,7 +51,7 @@ MaxMeterHeap {
     });
 
     // check that the internalArr.at(pos) has 0, 1, or more elements
-    internalArr = internalArr.insert(size, [key,value]);
+    internalArr = internalArr.insert(size, [key,value, metArrIndex]);
 
     current = size;
 
@@ -172,6 +172,11 @@ MaxMeterHeap {
       })
     });
     
+
+
+
+
+
 
 
 
