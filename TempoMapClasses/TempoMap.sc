@@ -24,6 +24,7 @@ TempoMap {
     var thisNumMatches;
     var numUnder180;
     var runningDiffTot;
+    var a;
     classvar <numStandardMatches;
     // TODO do not make this accessible THIS IS FOR DEBUG PURPOSES
     classvar <metArr;
@@ -39,14 +40,17 @@ TempoMap {
         ^super.new.initTempoMap();
     }
 
-    *ar { arg sig, blockSize;
-       var trig;
-       trig = Onsets.kr(FFT(LocalBuf(512), sig), threshold);
-       // "HERE AT AR".postln;
-       SendTrig.kr(trig, 0, 0);
-       ^0.0;
+    *ar { arg sig, thresh;
+        var amp, trig, a;
+        amp = Amplitude.kr(sig, 0.25, 0.25).ampdb;
+        amp = K2A.ar(amp);
+        //amp.poll;
+        trig = amp >= thresh;
+        SendTrig.ar(trig, 0, 0);
+
+        ^0.0
     }
-    
+
     initTempoMap {
         meterArr = Array.new(meterResolution);
         diffArr = Array.new();
@@ -71,21 +75,37 @@ TempoMap {
         timeAdjustment = 0;
         deltasHeap = MaxMeterHeap.new();
         notFound = 0;
-
         oscFunc = OSCFunc({
             arg msg, time;
-            "---------------".postln;
-            "time: ".post;
-            time.postln;
+            // "---------------".postln;
+            // "time: ".post;
+            // time.postln;
             this.add(time);
-           
+
         }, '/tr');
+    }
+
+    simp_add { arg time;
+
+        if (index > 0, {
+            var last, thisDiff;
+            last = timesQueue.pop();
+            thisDiff = time - last;
+            if (index > 1, {
+                diffQueue.push(deltasQueue.pop() - thisDiff);
+            });
+            deltasQueue.push(thisDiff);
+            // thisDiff.postln;
+        });
+
+        timesQueue.push(time);
+        index = index + 1;
     }
 
     add { arg time;
         // first delta added
-        'index: '.post;
-        index.postln;
+        // 'index: '.post;
+        // index.postln;
 
         if (index > 0, {
             var last, thisDiff, deltasCount;
@@ -104,11 +124,11 @@ TempoMap {
                 deltasMeterArr.add(thisDiff, 1);
             });
 
-            "deltasCount: ".post;
-            deltasMeterArr.print;
+            // "deltasCount: ".post;
+            // deltasMeterArr.print;
 
-            "diff: ".post;
-            (thisDiff).postln;
+            // "diff: ".post;
+            // (thisDiff).postln;
 
             if (index == 1, {
                 bpm = 60 / thisDiff;
@@ -135,12 +155,12 @@ TempoMap {
                     /// add everything from deltasCount into the heap 
                     // identify what the max value is.
                     // add them all with the backwards version 
-                    "*****deltasCount.size: ".post;
-                    deltaCountContents.size.postln;
+                    // "*****deltasCount.size: ".post;
+                    // deltaCountContents.size.postln;
 
                     deltaCountContents.size.do({|i|
-                        "INDEX: ".post;
-                        i.postln;
+                        // "INDEX: ".post;
+                        // i.postln;
                         deltasHeap.insert(
                             deltaCountContents.at(i)[1], 
                             deltaCountContents.at(i)[0],
@@ -154,8 +174,8 @@ TempoMap {
 
                     deltasAvg = deltaCountContents.at(maxDeltaCount[2])[3];
 
-                    "deltas average: ".post;
-                    deltasAvg.postln;
+                    // "deltas average: ".post;
+                    // deltasAvg.postln;
 
                     this.prInitMetArr(time, deltasAvg);
 
@@ -174,18 +194,18 @@ TempoMap {
                     });
                     cmpTime = time + timeAdjustment;                     
 
-                    "cmpTime: ".post;
-                    cmpTime.postln;
+                    // "cmpTime: ".post;
+                    // cmpTime.postln;
 
-                    "metArr max diff: ".postln;
-                    metArr.totalDiff.postln;
+                    // "metArr max diff: ".postln;
+                    // metArr.totalDiff.postln;
 
-                    "runningDiffTot: ".post;
-                    runningDiffTot.postln;
+                    // "runningDiffTot: ".post;
+                    // runningDiffTot.postln;
 
-                    "DID WE FIND A MATCH? ".post;
+                    // "DID WE FIND A MATCH? ".post;
                     found = metArr.find(cmpTime);
-                    found.postln;
+                    // found.postln;
 
                     if (found.isNil, {
 
@@ -202,8 +222,8 @@ TempoMap {
 
             deltasQueue.push(thisDiff);
             deltasTotAvg.push(thisDiff);
-             "Average delta: ".post;
-             deltasTotAvg.runningAvg.postln;
+             // "Average delta: ".post;
+             // deltasTotAvg.runningAvg.postln;
             // "Range: ".post;
             // deltasTotAvg.range.postln;
             // "Bpm running Avg: ".post;
@@ -211,7 +231,7 @@ TempoMap {
             if (bpmQueue.size > (bpm / 10), {
                 bpmQueue.pop();
             });
-            "-------------".postln;
+            // "-------------".postln;
 
         });
 
@@ -223,7 +243,7 @@ TempoMap {
 
         var meterValues, keyValuePairs, futureTimes;
 
-        "Initializing from time: ".post;
+        // "Initializing from time: ".post;
         initTime.postln;
 
         meterValues = Array.new(meterResolution);
@@ -260,10 +280,10 @@ prFindMatch { arg curr;
         diff = total - item;
 
         if((diff.abs < (item * tolerance)), {
-            "Found match between item: ".post;
-            item.post;
-            " and total: ".post;
-            total.postln;
+            // "Found match between item: ".post;
+            // item.post;
+            // " and total: ".post;
+            // total.postln;
             diffArr = diffArr.add(diff);
             thisMeasureDiffMean = thisMeasureDiffMean + diff;
             // if (diff.abs > makeAdjustmentRange, {
@@ -271,8 +291,8 @@ prFindMatch { arg curr;
                 // "outside of adjustmentRange".postln;
                 // this.prInitmeterArr(bpm + diff);
             // });
-            "diff: ".post;
-            diff.postln;
+            // "diff: ".post;
+            // diff.postln;
         });
         (total - item).abs < (item * tolerance);
     }) ? -1);

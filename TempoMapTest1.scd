@@ -11,14 +11,17 @@ o.outDevice = "External Headphones";
 s.latency = 0.5;
 ~speed = 0.5;
 ~hits = 500;
+
 )
+
+s.quit
 s.waitForBoot({
     
-    var synth;
-
+    var synth, tm;
     l = List.new;
+    s.latency = 0.0;
 
-    // tm = TempoMap.new;
+    OSCFunc.trace(false);
     TempoMap.new;
 
     synth = CtkSynthDef(\simple, {
@@ -27,7 +30,7 @@ s.waitForBoot({
         snd = SinOsc.ar(freq:440, mul: 0.2);
         env = EnvGen.kr(Env.perc(0.001, 0.5, 0.9, -4.0), doneAction: 2);
         sig = snd * env;
-        TempoMap.ar(sig, ~blockSize);
+        TempoMap.ar(sig, -18);
         Out.ar(0, Pan2.ar(sig, 0))
     });
 
@@ -37,17 +40,15 @@ s.waitForBoot({
         'instrument', 'simple',
         'out', 0,
         'freq', 75.midicps,
-        'dur', Pseq([~speed / 2, ~speed / 2, ~speed], ~hits),
+        'dur', Pseq([~speed], ~hits),
         // 'dur', Pseq([~speed / 2], ~hits),
         // 'stretch', Env([1, 0.5], [10], \sin),
 
     ).play();
 
-
     CmdPeriod.doOnce({
-        var standardDev, mean, n;
+        var standardDev, mean, n, diffsize;
         "Ended with CMDPERIOD".postln;
-        "mean: ".post;
         mean = TempoMap.deltasTotAvg.runningAvg;
         mean.postln;
         "size: ".post;
@@ -57,7 +58,7 @@ s.waitForBoot({
         standardDev = {
             var sum, squared;
             sum = 0;
-            TempoMap.deltasTotAvg.size.do({ 
+            TempoMap.deltasTotAvg.size.do({
                 squared = (TempoMap.deltasTotAvg.pop() - mean).squared;
                 sum = sum + squared;
             });
@@ -91,35 +92,4 @@ s.waitForBoot({
 s.quit
 s.plotTree
 
-~myFile = File.new("~/Music/SuperCollider/testFile".standardizePath, "w");
 
-(
-File.use("~/Music/SuperCollider/testFile.txt".standardizePath, "w", { |f|
-    f.write("check this out")})
-)
-
-(
-20.do {|i| (i % 4).postln;}
-)
-(
-{
-    SendPeakRMS.kr(Dust.ar(20), 20, 3, "/replyAddress")
-}.play;
-)
-
-(
-o = OSCFunc({ |msg|
-    "peak: %, rms: %".format(msg[3], msg[4]).postln
-}, '/replyAddress');
-)
-o.free;
-
-(
-var arr;
-
-arr = [5, 6, 5, 5, 6, 5];
-
-arr.do({|x,y| x.postln; y.postln; });
-
-
-)
