@@ -120,7 +120,6 @@ MeterArr {
 
   print {
     internalArr.postln;
-  
   }
 
   getArr {

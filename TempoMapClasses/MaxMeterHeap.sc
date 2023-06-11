@@ -3,15 +3,13 @@
 /* From node i, left child: (2 * i) + 1, right child: (2 * i) + 2, parent: (i-1) / 2 */
 
 MaxMeterHeap {
-  var root, <internalArr;
-  var size, maxSize;
+  var size, maxSize, internalArr;
 
   *new {
     ^super.new.initMaxHeap()
   }
 
   initMaxHeap {
-    root = TreeNode();
     internalArr = Array.newClear(10);
     size = 0;
   }
@@ -36,8 +34,8 @@ MaxMeterHeap {
 
     });
 
-    "Afterwards: ".postln;
-    internalArr.postln;
+    // "Afterwards: ".postln;
+    // internalArr.postln;
     ^result;
   }
 
@@ -51,7 +49,7 @@ MaxMeterHeap {
     });
 
     // check that the internalArr.at(pos) has 0, 1, or more elements
-    internalArr = internalArr.insert(size, [key,value, metArrIndex]);
+    internalArr = internalArr.insert(size, [key, value, metArrIndex]);
 
     current = size;
 
@@ -61,7 +59,6 @@ MaxMeterHeap {
       // internalArr.at(this.prParent(current)).postln;
       while ({ current > 0 }, { 
         if (
-
           internalArr.at(current)[0] > internalArr.at(this.prParent(current))[0], {
           // "Here".postln;
           this.prSwap(current, this.prParent(current));
@@ -71,12 +68,10 @@ MaxMeterHeap {
           // current.postln;
         });
           current = this.prParent(current);
-
       });
     });
 
     size = size + 1;
-    // internalArr.postln;
 
   }
 
@@ -134,51 +129,77 @@ MaxMeterHeap {
 
   prMaxHeapify { arg pos;
 
-    var leftChild, rightChild, curr;
+    var leftChild, rightChild, curr, leftChildPos, rightChildPos;
 
     if (this.prIsLeaf(pos), {
       ^nil
     });
 
-    curr = internalArr.at(pos);
-    leftChild = internalArr.at(this.prLeftChild(pos));
-    rightChild = internalArr.at(this.prRightChild(pos));
+    leftChildPos = this.prLeftChild(pos);
+    rightChildPos = this.prRightChild(pos);
 
-/*      "Curr: ".post;  */
-    /*  curr.post;  */
-    /* " left: ".post;  */
-    /*  leftChild.post;  */
-    /*  " right: ".post;  */
-    /*  rightChild.postln;  */
-     /* internalArr.postln; */
-    
+    curr = internalArr.at(pos)[0];
+    "curr: ".post; curr.postln;
+    leftChild = internalArr.at(leftChildPos);
+    // "leftChild: ".post; leftChild.postln;
+    rightChild = internalArr.at(rightChildPos);
+    // "rightChild: ".post; rightChild.postln;
+
+    case
+    { leftChild.isNil && rightChild.isNil } { }
+    { rightChild.isNil } {
+      var lc = leftChild[0];
+
+      if (curr < lc) {
+        "swapping curr and left child cus right child is nil".postln;
+        this.prSwap(pos, this.prLeftChild(pos));
+        this.prMaxHeapify(this.prLeftChild(pos));
+      }
+      { leftChild.isNil } {  
+        var rc = rightChild[0];
+        if (curr < rc) {
+          "swapping curr and right child cus left child is nil".postln;
+          this.prSwap(pos, this.prRightChild(pos));
+          this.prMaxHeapify(this.prRightChild(pos));
+        }
+      }
+      { true } {
+        var rc = rightChild[0];
+        var lc = leftChild[0];
+        if (lc > rc, {
+          if (curr < lc, {
+            "swapping curr and left child cus left is more than curr".postln;
+            this.prSwap(pos, this.prLeftChild(pos));
+            this.prMaxHeapify(this.prLeftChild(pos));
+          });
+        }, {
+          if (curr < rc, {
+            "swapping curr and right child cus right child is more than curr".postln;
+            this.prSwap(pos, this.prRightChild(pos));
+            this.prMaxHeapify(this.prRightChild);
+          });
+        })
+      }
+    };
 
     // if left is less than right, target is left
     // else, right is target
     // if curr is less than target, swap, return pos
     // if curr is less than other target, swap
 
-    if (leftChild != nil && rightChild != nil, {
-      if (leftChild > rightChild, {
-        if (curr < leftChild, {
-          this.prSwap(pos, this.prLeftChild(pos));
-          this.prMaxHeapify(this.prLeftChild(pos));
-        });
-      }, {
-        if (curr < rightChild, {
-          this.prSwap(pos, this.prRightChild(pos));
-          this.prMaxHeapify(this.prRightChild);
-        });
-      })
-    });
-    
-
-
-
-
-
-
-
+    /* if (leftChild.notNil && rightChild.notNil, { */
+    /*   if (leftChild > rightChild, { */
+    /*     if (curr < leftChild, { */
+    /*       this.prSwap(pos, this.prLeftChild(pos)); */
+    /*       this.prMaxHeapify(this.prLeftChild(pos)); */
+    /*     }); */
+    /*   }, { */
+    /*     if (curr < rightChild, { */
+    /*       this.prSwap(pos, this.prRightChild(pos)); */
+    /*       this.prMaxHeapify(this.prRightChild); */
+    /*     }); */
+    /*   }) */
+    /* }); */
 
   }
 
